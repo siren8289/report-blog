@@ -39,6 +39,8 @@ module.exports = async (req, res) => {
       },
     };
 
+    console.log("payload>>>", JSON.stringify(payload));
+
     const notionRes = await fetch("https://api.notion.com/v1/pages", {
       method: "POST",
       headers: {
