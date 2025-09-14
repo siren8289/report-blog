@@ -25,15 +25,16 @@ module.exports = async (req, res) => {
     const payload = {
       parent: { database_id: databaseId },
       properties: {
-        // Title 은 "Report DB"
-        "Report DB": { title: [{ text: { content: report } }] },
-        // 이름은 rich_text
-        이름: { rich_text: [{ text: { content: name } }] },
+        이름: { title: [{ text: { content: report } }] },
+        "Report DB": { rich_text: [{ text: { content: name } }] },
+
         // 개발자 파트는 multi_select (쉼표 구분 지원)
-        "개발자 파트": String(studentId)
-          .split(",")
-          .map((v) => ({ name: v.trim() }))
-          .filter((v) => v.name),
+        "개발자 파트": {
+          multi_select: String(studentId)
+            .split(",")
+            .map((v) => ({ name: v.trim() }))
+            .filter((v) => v.name),
+        },
         // 제출일은 date
         제출일: { date: { start: new Date().toISOString() } },
       },
