@@ -34,8 +34,7 @@
       .hint {
         color: #666;
         font-size: 12px;
-        margin-top: 10px;
-        margin-bottom: 10px;
+        margin: 10px 0;
       }
       .chips {
         display: flex;
@@ -60,7 +59,7 @@
         cursor: pointer;
       }
       .row {
-        display: flex;
+        /* display: flex; */
         gap: 30px;
       }
       .row > * {
@@ -77,24 +76,28 @@
           <label>이름</label>
           <input name="name" required placeholder="이름을 입력해주세요.." />
         </div>
+
         <div>
           <label>파트 <span class="hint">(여러 개 선택 가능)</span></label>
-          <!-- multi_select UI -->
           <div id="devChips" class="chips" aria-label="개발자 파트">
             <div class="chip" data-value="FE">FE</div>
             <div class="chip" data-value="BE">BE</div>
             <div class="chip" data-value="PM">PM</div>
             <div class="chip" data-value="Design">Design</div>
           </div>
-          <!-- 서버 전송용 숨김필드 (쉼표로 합쳐 담김) -->
           <input type="hidden" name="studentId" id="devHidden" required />
+        </div>
+
+        <div>
+          <label>제출일</label>
+          <input type="date" name="submittedAt" id="submittedAt" required />
+          <div class="hint">기본값은 오늘 날짜예요.</div>
         </div>
       </div>
 
       <label>리포트 내용</label>
       <div class="hint">
-        ✅ 붙여넣기(Ctrl/Cmd+V)와 드래그&드롭 사용 가능. 필요하면 자유롭게
-        복붙하세요.
+        ✅ 붙여넣기(Ctrl/Cmd+V)와 드래그&드롭 사용 가능. 자유롭게 복붙하세요.
       </div>
       <textarea id="reportText" name="report" required></textarea>
 
@@ -102,7 +105,17 @@
     </form>
 
     <script>
-      // ====== multi_select UI → 숨김필드(studentId)에 "FE, BE" 형태로 저장 ======
+      // 제출일 기본값: 오늘
+      const submittedAtInput = document.getElementById("submittedAt");
+      (function setToday() {
+        const t = new Date();
+        const yyyy = t.getFullYear();
+        const mm = String(t.getMonth() + 1).padStart(2, "0");
+        const dd = String(t.getDate()).padStart(2, "0");
+        submittedAtInput.value = `${yyyy}-${mm}-${dd}`;
+      })();
+
+      // multi_select → 숨김필드에 "FE, BE" 저장
       const chips = document.querySelectorAll("#devChips .chip");
       const devHidden = document.getElementById("devHidden");
       const syncHidden = () => {
@@ -118,21 +131,31 @@
         })
       );
 
-      // ====== 제출 ======
+      // 제출
       document
         .getElementById("reportForm")
         .addEventListener("submit", async (e) => {
           e.preventDefault();
-          // 선택 안 했으면 안내
+
           if (!devHidden.value.trim()) {
             alert("개발자 파트를 하나 이상 선택하세요.");
             return;
           }
+          if (!submittedAtInput.value) {
+            alert("제출일을 선택하세요.");
+            return;
+          }
+
+          // YYYY-MM-DD → ISO(자정 기준)
+          const submittedAtISO = new Date(
+            submittedAtInput.value + "T00:00:00"
+          ).toISOString();
 
           const payload = {
             name: e.target.name.value.trim(),
-            studentId: devHidden.value.trim(), // 쉼표로 구분된 multi_select 값들
+            studentId: devHidden.value.trim(),
             report: e.target.report.value.trim(),
+            submittedAt: submittedAtISO, // ← 추가된 날짜 필드
           };
 
           const API = "https://report-blog.vercel.app/api/submit";
@@ -150,6 +173,7 @@
               e.target.reset();
               chips.forEach((c) => c.classList.remove("active"));
               syncHidden();
+              setToday(); // 날짜도 오늘로 복구
             } else {
               alert("제출 실패: " + (await res.text()));
             }
