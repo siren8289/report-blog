@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>리포트 작성</title>
+    <title>주간 리포트 작성</title>
     <style>
       body {
         font-family: system-ui, sans-serif;
@@ -11,26 +11,60 @@
         margin: 40px auto;
         padding: 0 16px;
       }
+      label {
+        font-weight: 600;
+        display: block;
+        margin-top: 14px;
+      }
+      input,
+      textarea,
+      .chips {
+        width: 100%;
+        box-sizing: border-box;
+      }
       input,
       textarea {
-        width: 100%;
         padding: 10px;
-        margin: 6px 0 14px;
-        box-sizing: border-box;
+        margin: 6px 0 10px;
       }
       textarea {
         height: 320px;
         line-height: 1.6;
       }
+      .hint {
+        color: #666;
+        font-size: 12px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 8px 0 12px;
+      }
+      .chip {
+        border: 1px solid #bbb;
+        padding: 6px 10px;
+        border-radius: 999px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .chip.active {
+        background: #111;
+        color: #fff;
+        border-color: #111;
+      }
       button {
         padding: 10px 16px;
         cursor: pointer;
       }
-      .hint {
-        color: #666;
-        font-size: 12px;
-        /* margin-top: -8px; */
-        margin-bottom: 16px;
+      .row {
+        display: flex;
+        gap: 30px;
+      }
+      .row > * {
+        flex: 1;
       }
     </style>
   </head>
@@ -38,11 +72,24 @@
     <h1>주간 리포트 작성</h1>
 
     <form id="reportForm">
-      <label>이름</label>
-      <input name="name" required placeholder="홍길동" />
-
-      <label>학번</label>
-      <input name="studentId" required placeholder="2025xxxx" />
+      <div class="row">
+        <div>
+          <label>이름</label>
+          <input name="name" required placeholder="이름을 입력해주세요.." />
+        </div>
+        <div>
+          <label>파트 <span class="hint">(여러 개 선택 가능)</span></label>
+          <!-- multi_select UI (필요 없으면 아래 input 한 줄로 바꿔도 됨) -->
+          <div id="devChips" class="chips" aria-label="개발자 파트">
+            <div class="chip" data-value="FE">FE</div>
+            <div class="chip" data-value="BE">BE</div>
+            <div class="chip" data-value="PM">PM</div>
+            <div class="chip" data-value="Design">Design</div>
+          </div>
+          <!-- 서버 전송용 숨김필드 (쉼표로 합쳐 담김) -->
+          <input type="hidden" name="studentId" id="devHidden" required />
+        </div>
+      </div>
 
       <label>리포트 내용</label>
       <div class="hint">
@@ -51,13 +98,12 @@
       </div>
       <textarea id="reportText" name="report" required></textarea>
 
-      <button type="submit">제출</button>
+      <button id="submitBtn" type="submit">제출</button>
     </form>
 
     <script>
+      // ====== 붙여넣기 차단 ======
       const area = document.getElementById("reportText");
-
-      // 붙여넣기/드롭/우클릭/단축키 차단
       area.addEventListener("paste", (e) => {
         e.preventDefault();
         alert("붙여넣기 금지. 직접 입력하세요.");
@@ -72,35 +118,66 @@
         if (
           (mac && e.metaKey && e.key.toLowerCase() === "v") ||
           (!mac && e.ctrlKey && e.key.toLowerCase() === "v")
-        ) {
+        )
           e.preventDefault();
-        }
       });
 
+      // ====== multi_select UI → 숨김필드(studentId)에 "FE, BE" 형태로 저장 ======
+      const chips = document.querySelectorAll("#devChips .chip");
+      const devHidden = document.getElementById("devHidden");
+      const syncHidden = () => {
+        const values = [...chips]
+          .filter((c) => c.classList.contains("active"))
+          .map((c) => c.dataset.value);
+        devHidden.value = values.join(", ");
+      };
+      chips.forEach((c) =>
+        c.addEventListener("click", () => {
+          c.classList.toggle("active");
+          syncHidden();
+        })
+      );
+
+      // ====== 제출 ======
       document
         .getElementById("reportForm")
         .addEventListener("submit", async (e) => {
           e.preventDefault();
+          // 선택 안 했으면 안내
+          if (!devHidden.value.trim()) {
+            alert("개발자 파트를 하나 이상 선택하세요.");
+            return;
+          }
+
           const payload = {
             name: e.target.name.value.trim(),
-            studentId: e.target.studentId.value.trim(),
+            studentId: devHidden.value.trim(), // 쉼표로 구분된 multi_select 값들
             report: e.target.report.value.trim(),
           };
 
-          // ⬇️ 여기 URL을 본인 Vercel 주소로 바꿔줘!
           const API = "https://report-blog.vercel.app/api/submit";
-
-          const res = await fetch(API, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-
-          if (res.ok) {
-            alert("제출 완료!");
-            e.target.reset();
-          } else {
-            alert("제출 실패: " + (await res.text()));
+          const btn = document.getElementById("submitBtn");
+          btn.disabled = true;
+          btn.textContent = "제출 중…";
+          try {
+            const res = await fetch(API, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+            if (res.ok) {
+              alert("제출 완료!");
+              e.target.reset();
+              chips.forEach((c) => c.classList.remove("active"));
+              syncHidden();
+            } else {
+              alert("제출 실패: " + (await res.text()));
+            }
+          } catch (err) {
+            alert("네트워크 오류: " + (err?.message || err));
+          } finally {
+            btn.disabled = false;
+            btn.textContent = "제출";
           }
         });
     </script>

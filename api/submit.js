@@ -35,9 +35,14 @@ module.exports = async (req, res) => {
     const payload = {
       parent: { database_id: databaseId },
       properties: {
-        // ❗ Notion DB 컬럼명과 정확히 일치해야 함 (현재 DB: 이름 / 제목 / Report DB / 제출일)
-        이름: { title: [{ text: { content: name } }] },
-        제목: { rich_text: [{ text: { content: studentId } }] },
+        이름: { title: [{ text: { content: name } }] }, // Title
+        // 👇 multi_select: "FE, BE" 같은 입력을 ["FE","BE"]로 저장
+        "개발자 파트": {
+          multi_select: String(studentId)
+            .split(",")
+            .map((v) => ({ name: v.trim() }))
+            .filter((v) => v.name),
+        },
         "Report DB": { rich_text: [{ text: { content: report } }] },
         제출일: { date: { start: new Date().toISOString() } },
       },
