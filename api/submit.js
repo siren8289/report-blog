@@ -1,22 +1,41 @@
-// api/submit.js  (Vercel Serverless Function)
-export default async function handler(req, res) {
-  try {
-    if (req.method !== "POST")
-      return res.status(405).send("Method Not Allowed");
+// api/submit.js  — Vercel Serverless Function (CommonJS + CORS)
+module.exports = async (req, res) => {
+  // --- CORS ---
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-    const { name, studentId, report } = req.body || {};
-    if (!name || !studentId || !report)
+  if (req.method === "OPTIONS") {
+    return res.status(200).end(); // preflight 응답
+  }
+  if (req.method !== "POST") {
+    return res.status(405).send("Method Not Allowed");
+  }
+
+  try {
+    // body 안전 파싱
+    let body = req.body;
+    if (typeof body === "string") {
+      try {
+        body = JSON.parse(body);
+      } catch (_) {}
+    }
+
+    const { name, studentId, report } = body || {};
+    if (!name || !studentId || !report) {
       return res.status(400).send("Missing fields");
+    }
 
     const notionSecret = process.env.NOTION_SECRET;
     const databaseId = process.env.NOTION_DATABASE_ID;
-    if (!notionSecret || !databaseId)
+    if (!notionSecret || !databaseId) {
       return res.status(500).send("Server env not set");
+    }
 
     const payload = {
       parent: { database_id: databaseId },
       properties: {
-        // Notion DB의 실제 속성명과 맞춤
+        // ❗ Notion DB 컬럼명과 정확히 일치해야 함 (현재 DB: 이름 / 제목 / Report DB / 제출일)
         이름: { title: [{ text: { content: name } }] },
         제목: { rich_text: [{ text: { content: studentId } }] },
         "Report DB": { rich_text: [{ text: { content: report } }] },
@@ -38,8 +57,9 @@ export default async function handler(req, res) {
       const text = await notionRes.text();
       return res.status(500).send(`Notion error: ${text}`);
     }
+
     return res.status(200).json({ ok: true });
   } catch (err) {
     return res.status(500).send(err?.message || "Server error");
   }
-}
+};
