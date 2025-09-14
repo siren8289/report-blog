@@ -16,10 +16,10 @@ export default async function handler(req, res) {
     const payload = {
       parent: { database_id: databaseId },
       properties: {
-        // Notion DB의 속성명과 타입에 맞게 수정!
+        // Notion DB의 실제 속성명과 맞춤
         이름: { title: [{ text: { content: name } }] },
-        학번: { rich_text: [{ text: { content: studentId } }] },
-        "리포트 내용": { rich_text: [{ text: { content: report } }] },
+        제목: { rich_text: [{ text: { content: studentId } }] },
+        "Report DB": { rich_text: [{ text: { content: report } }] },
         제출일: { date: { start: new Date().toISOString() } },
       },
     };
