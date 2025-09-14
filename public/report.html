@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>리포트 작성</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 720px;
+        margin: 40px auto;
+        padding: 0 16px;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        margin: 6px 0 14px;
+        box-sizing: border-box;
+      }
+      textarea {
+        height: 320px;
+        line-height: 1.6;
+      }
+      button {
+        padding: 10px 16px;
+        cursor: pointer;
+      }
+      .hint {
+        color: #666;
+        font-size: 12px;
+        margin-top: -8px;
+        margin-bottom: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>주간 리포트 작성</h1>
+
+    <form id="reportForm">
+      <label>이름</label>
+      <input name="name" required placeholder="홍길동" />
+
+      <label>학번</label>
+      <input name="studentId" required placeholder="2025xxxx" />
+
+      <label>리포트 내용</label>
+      <div class="hint">
+        ⚠️ 붙여넣기(Ctrl/Cmd+V), 드롭, 우클릭 붙여넣기는 차단됩니다. 직접
+        타이핑하세요.
+      </div>
+      <textarea id="reportText" name="report" required></textarea>
+
+      <button type="submit">제출</button>
+    </form>
+
+    <script>
+      const area = document.getElementById("reportText");
+
+      // 붙여넣기/드롭/우클릭/단축키 차단
+      area.addEventListener("paste", (e) => {
+        e.preventDefault();
+        alert("붙여넣기 금지. 직접 입력하세요.");
+      });
+      area.addEventListener("drop", (e) => e.preventDefault());
+      area.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        alert("우클릭 메뉴 제한됨");
+      });
+      area.addEventListener("keydown", (e) => {
+        const mac = navigator.platform.toUpperCase().includes("MAC");
+        if (
+          (mac && e.metaKey && e.key.toLowerCase() === "v") ||
+          (!mac && e.ctrlKey && e.key.toLowerCase() === "v")
+        ) {
+          e.preventDefault();
+        }
+      });
+
+      document
+        .getElementById("reportForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const payload = {
+            name: e.target.name.value.trim(),
+            studentId: e.target.studentId.value.trim(),
+            report: e.target.report.value.trim(),
+          };
+
+          // ⬇️ 여기 URL을 본인 Vercel 주소로 바꿔줘!
+          const API = "https://report-blog-siren8289.vercel.app/api/submit";
+
+          const res = await fetch(API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (res.ok) {
+            alert("제출 완료!");
+            e.target.reset();
+          } else {
+            alert("제출 실패: " + (await res.text()));
+          }
+        });
+    </script>
+  </body>
+</html>
