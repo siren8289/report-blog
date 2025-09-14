@@ -79,7 +79,7 @@
         </div>
         <div>
           <label>파트 <span class="hint">(여러 개 선택 가능)</span></label>
-          <!-- multi_select UI (필요 없으면 아래 input 한 줄로 바꿔도 됨) -->
+          <!-- multi_select UI -->
           <div id="devChips" class="chips" aria-label="개발자 파트">
             <div class="chip" data-value="FE">FE</div>
             <div class="chip" data-value="BE">BE</div>
@@ -93,8 +93,8 @@
 
       <label>리포트 내용</label>
       <div class="hint">
-        ⚠️ 붙여넣기(Ctrl/Cmd+V), 드롭, 우클릭 붙여넣기는 차단됩니다. 직접
-        타이핑하세요.
+        ✅ 붙여넣기(Ctrl/Cmd+V)와 드래그&드롭 사용 가능. 필요하면 자유롭게
+        복붙하세요.
       </div>
       <textarea id="reportText" name="report" required></textarea>
 
@@ -102,26 +102,6 @@
     </form>
 
     <script>
-      // ====== 붙여넣기 차단 ======
-      const area = document.getElementById("reportText");
-      area.addEventListener("paste", (e) => {
-        e.preventDefault();
-        alert("붙여넣기 금지. 직접 입력하세요.");
-      });
-      area.addEventListener("drop", (e) => e.preventDefault());
-      area.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        alert("우클릭 메뉴 제한됨");
-      });
-      area.addEventListener("keydown", (e) => {
-        const mac = navigator.platform.toUpperCase().includes("MAC");
-        if (
-          (mac && e.metaKey && e.key.toLowerCase() === "v") ||
-          (!mac && e.ctrlKey && e.key.toLowerCase() === "v")
-        )
-          e.preventDefault();
-      });
-
       // ====== multi_select UI → 숨김필드(studentId)에 "FE, BE" 형태로 저장 ======
       const chips = document.querySelectorAll("#devChips .chip");
       const devHidden = document.getElementById("devHidden");
