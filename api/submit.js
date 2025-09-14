@@ -29,7 +29,7 @@ module.exports = async (req, res) => {
         "Report DB": { rich_text: [{ text: { content: name } }] },
 
         // 개발자 파트는 multi_select (쉼표 구분 지원)
-        "개발자 파트": {
+        파트: {
           multi_select: String(studentId)
             .split(",")
             .map((v) => ({ name: v.trim() }))
